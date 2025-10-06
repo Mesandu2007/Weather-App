@@ -1,0 +1,409 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Leaflet CSS -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+       <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <style>
+            body{
+                font-family:Arial, Helvetica, sans-serif;
+                background-color: hsla(210, 4%, 90%, 0.767);
+                margin: 0;
+                display: flex;
+                overflow-x: hidden;
+                flex-direction: column;
+                align-items:center;
+            }
+            .weatherForm{
+                margin: 20px;
+                align-items: center;
+                justify-content: center;
+                display: flex;
+                gap: 10px;
+
+            }
+            h1{
+                text-align: center;
+                font-size: 23px;
+                color: blue;
+            }
+            .cityInput{
+                padding:10px;
+                font-size:20px;
+                font-weight: bold;
+                border: 2px solid rgba(0, 0, 0, 0.223);
+                border-radius: 10px;
+                width:300px;
+                margin:10px;
+                
+            }
+            button[type="submit"]{
+                padding:10px 20px;
+                font-weight:bold;
+                font-size: 20px;
+                background-color: rgb(35, 141, 35) ;
+                color: white;
+                border: none;
+                border-radius:8px;
+                cursor: pointer;
+            }
+            button[type="submit"]:hover{
+                background-color: rgb(15, 201, 15);
+            }
+            .card{
+                background:linear-gradient(180deg,hsl(210,100%,75%), hsl(40,100%,75%));
+                padding: 50px;
+                box-shadow: 2px 2px 5px hsla(0,0%,0%,0.5);
+                display: none;
+                border-radius: 10px;
+                flex-direction:column;
+                align-items:center;
+                width: 100%;
+                margin:10px;
+                max-width:400px;
+            }
+            h1{
+                font-size: 3.5rem;
+                margin-top: 0;
+                margin-bottom: 25px;
+            }
+            p{
+                font-size: 1.5rem;
+                margin: 5px 0;
+            }
+            .cityDisplay, .tempDisplay{
+                font-size: 3.5rem;
+                font-weight: bold;
+                color: hsla(0,0%,0%,0.75);
+                margin-bottom:25px;
+            }
+            .humidityDisplay{
+                font-weight: bold;
+                margin-bottom:25px;
+            }
+            .descDisplay{
+                font-style: italic;
+                font-weight: bold;
+                font-size: 2rem;
+            }
+            .weatherEmoji{
+                margin:0;
+                font-size:7.5rem;
+            }
+            .errorDisplay{
+                font-size: 2.5rem;
+                font-weight: bold;
+                color:black;
+            }
+            .convertBtn {
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-size: 18px;
+                font-weight: bold;
+                color: white;
+                background-color: #0077cc;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: 0.3s;
+            }
+            #map_1{
+                height: 300px;
+                width:70%;
+                border-radius:10px;
+                margin-top:15px;
+            }
+            .location{
+                padding:10px 20px;
+                font-weight:bold;
+                font-size: 20px;
+                background-color:blue ;
+                color: white;
+                border: none;
+                border-radius:8px;
+                cursor: pointer;
+            }
+
+            @media(max-width:600px){
+                .cityInput{
+                    font-size:15px;
+                    width: 200px;
+
+
+                }
+                button[type="submit"]{
+                    padding:5px 5px;
+                    font-weight:bold;
+                    font-size: 14px;
+                    background-color: rgb(35, 141, 35) ;
+                    color: white;
+                    height: 45px;
+                    border: none;
+                    border-radius:8px;
+                    cursor: pointer;
+               }
+               .card{
+                margin-left: auto;
+                margin-right: auto;
+                width:50%;
+                max-width: 350px;
+            
+               }
+               .descDisplay{
+                font-size: 17px;
+               }
+               .emptyCityError{
+                font-size: 18px;
+               }
+               .apiError{
+                font-size: 15px;
+               }
+               h1{
+                font-size:37px;
+               }
+               .location{
+                    padding:8px 10px;
+                    font-weight:bold;
+                    font-size: 13px;
+                    background-color:blue ;
+                    color: white;
+                    border: none;
+                    border-radius:8px;
+                    cursor: pointer;
+                }
+                
+               
+               
+            }
+
+        </style>
+
+    </head>
+    <body>
+        <h1>My Weather App</h1>
+        <form class="weatherForm">
+            <input type="text" class="cityInput" placeholder="Enter City">
+            <button type="submit">Get Weather</button>
+            <button  class="location">Use My Location</button>
+        </form>
+        <div class="card" display="display:none">
+
+          
+        </div>
+        <div class="map" id="map_1">
+
+        </div>
+        <script>
+            const weatherForm=document.querySelector(".weatherForm");
+            const cityInput=document.querySelector(".cityInput");
+            const card=document.querySelector(".card");
+            const apiKey="d5eb8f8f7c35b183a00404e1efa710b2";
+            const locationBtn=document.querySelector(".location");
+
+
+            locationBtn.addEventListener("click",()=>{
+                if(navigator.geolocation){
+                    navigator.geolocation.getCurrentPosition(onSuccess,onError);
+                }
+                else{
+                    alert("Geolocation is not supported by your browser");
+                }
+            });
+
+
+            async function onSuccess(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                try {
+                    const WeatherData = await getWeatherByCoords(lat, lon);
+                    displayWeatherInfo(WeatherData);
+                } catch (error) {
+                    console.error(error);
+                    displayError("Unable to fetch weather for your location.");
+                }
+            }
+
+            function onError(error) {
+                alert("Unable to retrieve your location.");
+                console.error(error);
+            }
+
+
+
+
+
+
+            weatherForm.addEventListener("submit", async event =>{
+                event.preventDefault();
+
+                const city=cityInput.value;
+                if(city){
+                    try{
+                        const WeatherData=await getWeatherData(city);
+                        displayWeatherInfo(WeatherData);
+
+                    }
+                    catch(error){
+                        console.error(error);
+                        displayError(error);
+                        document.querySelector(".errorDisplay").classList.add("apiError");
+
+                    }
+
+                }
+                else{
+                    displayError("Please Enter A City");
+                    document.querySelector(".errorDisplay").classList.add("emptyCityError");
+
+
+
+                }
+
+
+            });
+
+            async function getWeatherData(city){
+                const apiUrl=`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+                const response=await fetch(apiUrl);
+                console.log(response);
+                if(!response.ok){
+                    throw new Error("Could not fetch weather data!");
+                }
+            
+                return await response.json();
+            }
+            async function getWeatherByCoords(lat, lon) {
+                const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error("Could not fetch weather data by coordinates!");
+                }
+                return await response.json();
+            }
+
+
+
+
+
+
+
+            let map;
+            function displayWeatherInfo(data){
+                const{name: city,
+                     main:{temp, humidity},
+                     weather:[{description, id}],
+                     coord:{lat,lon}}=data;
+
+                card.textContent="";
+                card.style.display="flex";
+                const cityDisplay=document.createElement("h1");
+                const tempDisplay=document.createElement("p");
+                const humidityDisplay=document.createElement("p");
+                const descDisplay=document.createElement("p");
+                const weatherEmoji=document.createElement("p");
+                const convertBtn=document.createElement("button");
+
+                cityDisplay.textContent=city;
+                tempDisplay.textContent=`${(temp).toFixed(1)}*C`;
+                humidityDisplay.textContent= `Humidity: ${humidity}%`;
+                descDisplay.textContent=description;
+                convertBtn.textContent="Convert to *F";
+
+                cityDisplay.classList.add("cityDisplay");
+                tempDisplay.classList.add("tempDisplay");
+                humidityDisplay.classList.add("humidityDisplay");
+                descDisplay.classList.add("descDisplay");
+                convertBtn.classList.add("convertBtn");
+
+
+                 
+                card.appendChild(cityDisplay);
+                card.appendChild(tempDisplay);
+                card.appendChild(humidityDisplay);
+                card.appendChild(descDisplay);
+                card.appendChild(convertBtn);
+
+                let isCelsius=true;
+                convertBtn.addEventListener("click",()=>{
+                if(isCelsius){
+                    const fahrenheit=(temp*9/5)+32;
+                    tempDisplay.textContent=`${fahrenheit.toFixed(1)} *F`;
+                    convertBtn.textContent="Convert to *C";
+                    isCelsius=false;
+                }
+                else{
+                    tempDisplay.textContent=`${temp.toFixed(1)} *C`;
+                    convertBtn.textContent="Convert to *F";
+                    isCelsius=true;
+                }
+               });
+
+
+
+
+
+
+
+
+
+
+
+                // ✅ Show map below the card
+                // ✅ Show map below the card
+                const mapDiv = document.getElementById("map_1");
+                mapDiv.style.display = "block"; // show it
+
+                // Clear previous map if any
+                mapDiv.innerHTML = "";
+
+                if (map) {
+                    map.remove();
+                }
+
+                // Create map
+                map = L.map('map_1').setView([lat, lon], 6);
+
+                // Base map layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                L.tileLayer(`https://tile.openweathermap.org/map/clouds/{z}/{x}/{y}.png?appid=${apiKey}`, {
+                    attribution: 'Weather data © OpenWeatherMap',
+                    opacity: 0.6
+                }).addTo(map);
+
+
+            
+
+                // City marker
+                L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`${city}`)
+                    .openPopup();
+
+
+            }
+            function getWeatherEmoji(weatherId){
+
+            }
+            function displayError(message){
+                const errorDisplay=document.createElement("p");
+                errorDisplay.textContent=message;
+                errorDisplay.classList.add("errorDisplay");
+
+                card.textContent="";
+                card.style.display="flex";
+                card.appendChild(errorDisplay);
+            }
+           
+
+
+
+
+
+
+
+        </script>
+    </body>
+
+</html>

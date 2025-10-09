@@ -294,7 +294,8 @@
                 const{name: city,
                      main:{temp, humidity},
                      weather:[{description, id}],
-                     coord:{lat,lon}}=data;
+                     coord:{lat,lon},
+                     wind:{speed}}=data;
 
                 card.textContent="";
                 card.style.display="flex";
@@ -309,12 +310,14 @@
                 tempDisplay.textContent=`${(temp).toFixed(1)}*C`;
                 humidityDisplay.textContent= `Humidity: ${humidity}%`;
                 descDisplay.textContent=description;
+                windDisplay.textContent=`Wind Speed: ${speed}m/s`;
                 convertBtn.textContent="Convert to *F";
 
                 cityDisplay.classList.add("cityDisplay");
                 tempDisplay.classList.add("tempDisplay");
                 humidityDisplay.classList.add("humidityDisplay");
                 descDisplay.classList.add("descDisplay");
+                windDisplay.classList.add("windDisplay");
                 convertBtn.classList.add("convertBtn");
 
 
@@ -323,6 +326,7 @@
                 card.appendChild(tempDisplay);
                 card.appendChild(humidityDisplay);
                 card.appendChild(descDisplay);
+                card.appendChild(windDisplay);
                 card.appendChild(convertBtn);
 
                 let isCelsius=true;

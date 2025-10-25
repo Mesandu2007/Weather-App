@@ -1,0 +1,586 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+         
+        <!-- Leaflet CSS for maps (though not used in this code) -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+        <style>
+            /* Remove horizontal scrollbar */
+            html{
+                overflow-x: hidden;
+            }
+            
+            /* Body styling: center elements, light gray background */
+            body{
+                font-family: Arial, Helvetica, sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+                background-color: hsla(210, 4%, 90%, 0.767);
+                margin: 0;
+                display: flex;
+                overflow-x: hidden;
+                flex-direction: column;
+                align-items:center;
+            }
+
+            /* Navigation bar */
+            nav{
+                background-color:blue;
+                width:100%;
+                margin-top:0px;
+            }
+    
+            /* Navigation menu layout */
+            nav ul{
+                width:100%;
+                list-style: none;
+                display:flex;
+                align-items: center;
+                padding:0 20px;
+                height:60px;
+                justify-content: flex-end;
+            }
+            
+            /* Navigation list items */
+            nav li{
+                display: flex;
+                align-items: center;
+                margin-right: 60px;
+            }
+
+            /* Navigation links */
+            nav a{
+                height:100%;
+                font-size: 26px;
+                text-decoration: none;
+                display:flex;
+                align-items: center;
+                color:white;
+            }
+
+            /* Hover effect for nav links */
+            nav a:not(.name a):hover{
+                background-color: grey;
+                border-radius: 8px;
+            }
+
+            /* Left-align first item (app name) */
+            nav li:first-child {
+                margin-right: auto;
+            }
+
+            /* Temperature unit dropdown styling */
+            select {
+                padding: 5px 10px;
+                border-radius: 8px;
+                font-size: 18px;
+                border: none;
+                background-color: white;
+                color: black;
+                cursor: pointer;
+            }
+
+            /* Form styling for search and location buttons */
+            .weatherForm{
+                margin: 20px;
+                align-items: center;
+                justify-content: center;
+                display: flex;
+                width: 59%;
+                gap: 10px;
+            }
+            
+            /* Input field for city */
+            .cityInput{
+                padding:10px;
+                width: 100%;
+                max-width:570px;
+                box-sizing:border-box;
+                font-size:15px;
+                font-weight: bold;
+                border: 2px solid rgba(0, 0, 0, 0.223);
+                border-radius: 10px;
+                margin:10px;
+            }
+
+            /* Search button */
+            button[type="submit"]{
+                max-width:300px;
+                padding:5px 5px;
+                font-weight:bold;
+                font-size: 15px;
+                background-color: rgb(35, 141, 35);
+                color: white;
+                border: none;
+                height: 45px;
+                border-radius:8px;
+                cursor: pointer;
+            }
+
+            /* Search button hover effect */
+            button[type="submit"]:hover{
+                background-color: rgb(15, 201, 15);
+            }
+           
+            /* Location button */
+            .location{
+                max-width:300px;
+                font-weight:bold;
+                height: 45px;
+                font-size: 15px;
+                background-color:blue;
+                color: white;
+                border: none;
+                border-radius:8px;
+                cursor: pointer;
+            }
+
+            /* Weather main container */
+            .weather-container{
+                max-width: 1100px;
+                width: 90%;
+                background: white;
+                border-radius: 15px;
+                padding:25px 35px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+
+            /* Header inside weather container */
+            .weather-header{
+                font-size: 28px;
+                margin:0;
+            }
+
+            .weather-header p{
+                color:#555;
+                margin-top:5px;
+                font-size:16px;
+            }
+
+            /* Main weather section (temperature + condition) */
+            .weather-main{
+                margin-top: 20px;
+            }
+
+            .weather-main h1{
+                font-size: 60px;
+                margin:0px;
+            }
+
+            .weather-main p {
+                font-size: 20px;
+                color: #444;
+            }
+
+            /* Weather details section (humidity, wind, etc.) */
+            .weather-detailes{
+                display:flex;
+                justify-content: space-between;
+                margin-top: 30px;
+                text-align: center;
+                font-size: 16px;
+                gap: 100px;
+            }
+
+            .weather-detailes span{
+                display: block;
+                margin-top:15px;
+            }
+
+            /* Forecast container for 3-day forecast */
+            .forcast-container{
+                max-width:1100px;
+                width:90%;
+                margin-top:30px;
+                background: white;
+                padding:20px 35px;
+                border-radius: 15px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            }
+
+            /* Layout for forecast cards */
+            .dates{
+                display: flex;
+                justify-content: space-between;
+                margin-top: 30px;
+            }
+
+            /* Individual day forecast cards */
+            .datec{
+                background-color: rgb(218, 216, 216);
+                border-radius: 7px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                padding: 10px;
+                display: flex;              
+                flex-direction: column; 
+                gap:1px;
+                width: 20%;    
+                justify-content: center;
+                align-items: center;        
+                text-align: center;   
+            }
+
+            /* Responsive styling for tablets */
+            @media (min-width:600px) and (max-width:900px){
+                .weatherForm{
+                    width: 70%;
+                }
+                .cityInput{
+                    font-size:15px;
+                    max-width: 500px;
+                }
+                nav a{
+                    font-size: 25px;
+                }
+                button[type="submit"], .location{
+                    font-size: 14px;
+                    width: 50%;
+                }
+                select {
+                    font-size: 14px;
+                }
+                .weather-container{
+                    max-width: 800px;
+                    width: 80%;
+                }
+                .weather-main h1{
+                    font-size: 30px;
+                }
+                .weather-main p{
+                    font-size: 15px;
+                }
+                .weather-detailes{
+                    font-size:14px;
+                    gap: 25px;
+                }
+                .forcast-container{
+                    max-width: 800px;
+                    width:80%;
+                }
+            }
+           
+            /* Responsive styling for small screens (phones) */
+            @media(max-width:600px){
+                .cityInput{
+                    width: 200px;
+                }
+                nav a{
+                    font-size: 23px;
+                }
+                button[type="submit"], .location{
+                    font-size: 12px;
+                    height: 40px;
+                }
+                .weather-container{
+                    max-width: 400px;
+                    width: 70%;
+                }
+                .weather-main h1{
+                    font-size: 30px;
+                }
+                .weather-main p{
+                    font-size: 15px;
+                }
+                .weather-detailes{
+                    font-size:12px;
+                    flex-wrap:wrap;
+                    gap: 20px;
+                }
+                .forcast-container{
+                    max-width:400px;
+                    width:70%;
+                }
+                .datec h3{
+                    font-size: 13px;
+                }
+                #weatherMap{
+                    max-width:400px;
+                    width:50%;
+                }
+
+
+
+            }
+        </style>
+    </head>
+
+    <body>
+        <!-- Navigation bar -->
+        <nav>
+            <ul>
+                <li class="name"><a href="#">☁️My Weather App</a></li>
+                <!-- Dropdown for selecting temperature unit -->
+                <li>
+                    <select id="unit" name="tempreture">
+                        <option value="celcius">*C</option>
+                        <option value="farenheight">*F</option>
+                    </select>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Weather search form -->
+        <form class="weatherForm">
+            <input type="text" class="cityInput" placeholder="Enter City">
+            <button type="submit">Search</button>
+            <button class="location">Use Location</button>
+        </form>
+
+        <!-- Current weather display -->
+        <div class="weather-container" id="weatherContainer">
+            <div class="weather-header">
+                <h2 id="city-name"></h2>
+                <p id="date-time"></p>
+            </div>
+            <div class="weather-main">
+                <h1 id="tempreture"></h1>
+                <p id="condition"></p>
+            </div>
+            <div class="weather-detailes">
+                <div><strong>Humidity</strong><br><span id="humidity"></span></div>
+                <div><strong>Wind</strong><br><span id="wind"></span></div>
+                <div><strong>Pressure</strong><br><span id="pressure"></span></div>
+                <div><strong>UV Index</strong><br><span id="uv"></span></div>
+            </div>
+        </div>
+
+        <!-- 3-day forecast display -->
+        <div class="forcast-container" id="forcastContainer">
+            <h2>3 Day Forcast</h2>
+            <div class="dates" id="datecard">
+                <div class="date1 datec">
+                    <h3 id="day1"></h3>
+                    <img id="pic1" src="" alt="Weather Icon">
+                    <h5 id="temp1"></h5>
+                </div>
+                <div class="date2 datec">
+                    <h3 id="day2"></h3>
+                    <img id="pic2" src="" alt="Weather Icon">
+                    <h5 id="temp2"></h5>
+                </div>
+                <div class="date3 datec">
+                    <h3 id="day3"></h3>
+                    <img id="pic3" src="" alt="Weather Icon">
+                    <h5 id="temp3"></h5>
+                </div>
+            </div>
+        </div>
+        <div id="weatherMap" style="width: 90%; max-width: 1170px; height: 400px; margin-top: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);"></div>
+
+
+        <!-- JavaScript section -->
+        <script>
+            // API key for OpenWeatherMap
+            const apiKey = '4a9459c2da1923d5ce1cb5f13624cf30';
+
+            // Selecting important DOM elements
+            const form=document.querySelector(".weatherForm");
+            const cityInput=document.querySelector(".cityInput");
+            const getWeatherBtn=document.querySelector("button[type='submit']");
+            const locationBtn=document.querySelector(".location");
+            const cityNameEl=document.getElementById("city-name");
+            const tempEl = document.getElementById("tempreture");
+            const conditionEl = document.getElementById("condition");
+            const humidityEl = document.getElementById("humidity");
+            const windEl = document.getElementById("wind");
+            const pressureEl = document.getElementById("pressure");
+            const uvEl = document.getElementById("uv");
+            const dateTimeEl=document.getElementById("date-time");
+            const unitSelect = document.getElementById("unit");
+
+            // Function to display date and time
+            function formatDateTime() {
+                const now = new Date();
+                const options = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+                const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                return `${now.toLocaleDateString(undefined, options)} at ${time}`;
+            }
+
+            // Function to update temperature display based on selected unit
+            function updateTemp(){
+                if(currentTempC !==null){
+                    if(unitSelect.value==="celcius"){
+                        tempEl.textContent = Math.round(currentTempC) + "*C";
+                    }
+                    else{
+                        tempEl.textContent = Math.round(currentTempC * 9/5 + 32) + "*F";
+                    }
+                }
+            }
+
+            // Function to fetch current weather data
+            async function getWeather(city=null,lat=null,lon=null){
+                let url="";
+                if(city){
+                    url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+                } else if(lat && lon){
+                    url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+                } else {
+                    url = `https://api.openweathermap.org/data/2.5/weather?q=Colombo&appid=${apiKey}&units=metric`;
+                }
+                                 
+                try{
+                    const res=await fetch(url);
+                    const data=await res.json();
+
+                    // Extracting data from API response
+                    const{
+                        name,
+                        sys: {country},
+                        main: {temp,humidity,pressure},
+                        weather:[{description}],
+                        wind: {speed}
+                    }=data;
+
+                    // Update UI
+                    cityNameEl.textContent=` ${name}, ${country}`;   
+                    currentTempC=temp;
+                    conditionEl.textContent=description;
+                    humidityEl.textContent=`${humidity}%`;
+                    windEl.textContent=`${speed} Km/h`;
+                    pressureEl.textContent = `${pressure} hPa`;
+                    uvEl.textContent = "N/A";
+                    dateTimeEl.textContent = formatDateTime();
+                    updateTemp();
+                    return data;
+                }
+                catch(err){
+                    alert("Could Not Fetch Weather Data.");
+                    return  
+                    console.log(err); 
+                }
+            }
+
+            // Variable to store forecast data
+            let forecastData=[];
+
+            // Function to fetch 3-day forecast data
+            async function getForecast(city=null,lat=null,lon=null){
+                let url="";
+                if(city){
+                    url=`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;  
+                }
+                else if(lat && lon){
+                    url=`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+                }
+                else{
+                    url=`https://api.openweathermap.org/data/2.5/forecast?q=Colombo&appid=${apiKey}&units=metric`; 
+                }
+
+                try{
+                    const res=await fetch(url);
+                    const data=await res.json();
+
+                    // Filter every 8th forecast (daily data)
+                    const forecastList=data.list.filter((item,i)=>i%8==0);
+                    const [day1, day2, day3] = forecastList.slice(1, 4); // Skip today
+
+                    // Store forecast data
+                    forecastData = [
+                        { date: day1.dt_txt, temp: Math.round(day1.main.temp), description: day1.weather[0].description, icon: day1.weather[0].icon },
+                        { date: day2.dt_txt, temp: Math.round(day2.main.temp), description: day2.weather[0].description, icon: day2.weather[0].icon },
+                        { date: day3.dt_txt, temp: Math.round(day3.main.temp), description: day3.weather[0].description, icon: day3.weather[0].icon },
+                    ];
+
+                    displayForecast();
+                }
+                catch(err){
+                    return;          
+                 }
+            }
+
+            // Function to display forecast data
+            function displayForecast(){
+                const dayIds=["day1","day2","day3"];
+                const picIds=["pic1","pic2","pic3"];
+                const tempIds=["temp1","temp2","temp3"];
+
+                forecastData.forEach((f,i)=>{
+                    const dateObj=new Date(f.date);
+                    const dayName=dateObj.toLocaleDateString(undefined,{weekday:"long"});
+
+                    document.getElementById(dayIds[i]).textContent=dayName;
+                    document.getElementById(picIds[i]).src = `https://openweathermap.org/img/wn/${f.icon}@2x.png`;
+                    document.getElementById(tempIds[i]).textContent=convertTemp(f.temp);
+                });
+            }
+
+            // Fetch both current weather and forecast
+            async function getWeatherAndForecast(city=null,lat=null,lon=null){
+                try{
+                    const weatherData = await getWeather(city,lat,lon); // ✅ store data here
+                    await getForecast(city,lat,lon);
+                    await getWeather(city,lat,lon);
+                    await getForecast(city,lat,lon);
+                    let latCoord = lat || weatherData.coord.lat;
+                    let lonCoord = lon || weatherData.coord.lon;
+                    initMap(latCoord, lonCoord);
+                }
+                catch(err){
+                    return;
+                }    
+            }
+
+            // Convert temperature between C and F
+            function convertTemp(tempC) {
+                if (unitSelect.value === "celcius") {
+                    return Math.round(tempC) + "*C";
+                } else {
+                    return Math.round(tempC * 9 / 5 + 32) + "*F";
+                }
+            }
+
+            // Event: when user clicks “Search”
+            getWeatherBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const city = cityInput.value.trim();
+                if (city) {
+                    getWeatherAndForecast(city);
+                } else {
+                    alert("Please enter a city name.");
+                }
+            });
+
+            // Event: when user clicks “Use Location”
+            locationBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const { latitude, longitude } = position.coords;
+                        getWeatherAndForecast(null, latitude, longitude);
+                    }, () => {
+                        alert("Unable to get your location.");
+                    });
+                } else {
+                    alert("Geolocation is not supported by your browser.");
+                }
+            });
+            let map;
+            let market;
+            function initMap(lat=6.9271, lon=79.8612){
+                if(! map){
+                    map=L.map('weatherMap').setView([lat,lon], 10);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+                        attribution:'© OpenStreetMap contributors'
+                    }).addTo(map);
+                    marker=L.marker([lat,lon]).addTo(map);
+                }
+                else{
+                    map.setView([lat,lon],10);
+                    marker.setLatLng([lat,lon]);
+                }
+            }
+
+            // Event: when user changes temperature unit (*C / *F)
+            unitSelect.addEventListener("change",()=>{
+                updateTemp();
+                displayForecast();
+            });
+          
+
+            // Default load: show Colombo weather
+            window.addEventListener("load", () => getWeatherAndForecast());  
+        </script>
+    </body>
+</html>
